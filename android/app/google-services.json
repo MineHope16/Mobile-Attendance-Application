@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "408034062345",
+    "project_id": "flutterattendanceapp-dfc32",
+    "storage_bucket": "flutterattendanceapp-dfc32.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:408034062345:android:8739c9a7f4523a17cac8d8",
+        "android_client_info": {
+          "package_name": "com.example.zidio_attendance_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBKhPVvDqZg6ptVnsxqAMWUS_avsffQ7_Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

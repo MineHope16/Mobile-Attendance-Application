@@ -1,6 +1,8 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zidio_attendance_project/screens/home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,8 +18,11 @@ class _LoginScreenState extends State<LoginScreen> {
   double screenwidth = 0;
   Color primary = const Color(0xFFB333FF);
 
+  late SharedPreferences sharedPreferences;
+
   @override
   Widget build(BuildContext context) {
+    final bool isKeyboardVisible = KeyboardVisibilityProvider.isKeyboardVisible(context);
     screenheight = MediaQuery.of(context).size.height;
     screenwidth = MediaQuery.of(context).size.width;
 
@@ -26,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen> {
       resizeToAvoidBottomInset: false,
       body: Column(
         children: [
+          isKeyboardVisible ? const SizedBox(height: 20,) :
           Container(
             height: screenheight / 4,
             width: screenwidth,
@@ -72,20 +78,60 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 25),
 
-                Container(
-                  height: 60,
-                  width: screenwidth,
-                  decoration: BoxDecoration(
-                    color: primary,
-                    borderRadius: const BorderRadius.all(Radius.circular(50)),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "LOGIN",
-                      style: TextStyle(
-                        fontSize: screenwidth / 20,
-                        fontFamily: "Nexa Bold",
-                        letterSpacing: 2,
+                GestureDetector(
+                  onTap: () async {
+                    FocusScope.of(context).unfocus();
+                    String id = idController.text.trim();
+                    String pass = passController.text.trim();
+
+
+                    if (id.isEmpty){
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Employee Id Cannot be Empty !")));
+                    } else if (pass.isEmpty){
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password Cannot be Empty !")));
+                    } else {
+                      QuerySnapshot snap = await FirebaseFirestore.instance.collection("Employee").where('id', isEqualTo: id).get();
+
+                      try {
+                        if (pass == snap.docs[0]['password']){
+                          sharedPreferences = await SharedPreferences.getInstance();
+                          sharedPreferences.setString("emp_id", id).then((_) {
+                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
+                          });
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password is Incorrect !")));
+
+                        }
+                        
+                      } catch (e){
+                        print("error ->${e.toString()}");
+                        if (e.toString() == "RangeError (index): Invalid value: Valid value range is empty: 0"){
+                          setState(() {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Employee Does Not Exist !")));
+                          });
+                        } else {
+                          setState(() {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("An Error Occured !")));
+                          });
+                        }
+                      }
+                    }
+                  },
+                  child: Container(
+                    height: 60,
+                    width: screenwidth,
+                    decoration: BoxDecoration(
+                      color: primary,
+                      borderRadius: const BorderRadius.all(Radius.circular(50)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        "LOGIN",
+                        style: TextStyle(
+                          fontSize: screenwidth / 20,
+                          fontFamily: "Nexa Bold",
+                          letterSpacing: 2,
+                        ),
                       ),
                     ),
                   ),
