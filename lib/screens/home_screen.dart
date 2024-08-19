@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int currentIndex = 0;
 
   List<IconData> navigationIcons = [
-    FontAwesomeIcons.calendarAlt,
+    FontAwesomeIcons.solidCalendarDays,
     FontAwesomeIcons.check,
     FontAwesomeIcons.user,
   ];
@@ -36,8 +36,8 @@ class _HomeScreenState extends State<HomeScreen> {
         index: currentIndex,
         children: const [
           CalendarScreen(),
-          ProfileScreen(),
           TodayScreen(),
+          ProfileScreen(),
         ],
       ),
       
