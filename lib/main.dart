@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
+import 'package:month_year_picker/month_year_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zidio_attendance_project/screens/home_screen.dart';
 import 'package:zidio_attendance_project/screens/login_screen.dart';
@@ -32,6 +33,9 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const KeyboardVisibilityProvider(child: AuthCheck(),),
+      localizationsDelegates: const [
+        MonthYearPickerLocalizations.delegate,
+      ],
     );
   }
 }
@@ -60,7 +64,7 @@ class _AuthCheckState extends State<AuthCheck> {
     try{
       if(sharedPreferences.getString("emp_id") != null){
         setState(() {
-          User.username = sharedPreferences.getString("emp_id")!;
+          User.employeeId = sharedPreferences.getString("emp_id")!;
           userAvailable = true;
         });
       }

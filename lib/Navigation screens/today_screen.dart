@@ -35,7 +35,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
       QuerySnapshot snap = await FirebaseFirestore.instance
           .collection("Employee")
-          .where('id', isEqualTo: User.username)
+          .where('id', isEqualTo: User.employeeId)
           .get();
 
       DocumentSnapshot snap2 = await FirebaseFirestore.instance
@@ -51,15 +51,11 @@ class _TodayScreenState extends State<TodayScreen> {
       });
 
     } catch(e) {
-      print("errrrrrrrrrrrrrrrororrrrrrrrr------> $e");
       setState(() {
         checkIn = "--/--";
         checkOut = "--/--";
       });
     }
-
-    print(checkIn);
-    print(checkOut);
   }
 
   @override
@@ -90,7 +86,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     ),
                   ),
                   Text(
-                    "Employee ${User.username}",
+                    "Employee ${User.employeeId}",
                     style: TextStyle(
                       fontFamily: "Nexa Bold",
                       fontSize: screenWidth / 18,
@@ -117,87 +113,100 @@ class _TodayScreenState extends State<TodayScreen> {
             // Check-in/out Card
             Container(
               margin: const EdgeInsets.symmetric(vertical: 20),
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-              height: 160,
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [primary, secondary],
+                  colors: [primary.withOpacity(0.8), secondary.withOpacity(0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 15,
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 20,
                     offset: Offset(0, 10),
-                  )
+                  ),
                 ],
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withOpacity(0.4),
                   width: 1.5,
                 ),
               ),
               child: Row(
                 children: [
                   Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Check In",
-                          style: TextStyle(
-                            fontSize: screenWidth / 24,
-                            fontFamily: "Nexa Light",
-                            color: Colors.lightGreen,
-                            letterSpacing: 1.2,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Check In",
+                            style: TextStyle(
+                              fontSize: screenWidth / 24,
+                              fontFamily: "Cambria",
+                              color: Colors.lightGreen,
+                              letterSpacing: 1.2,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          checkIn,
-                          style: TextStyle(
-                            fontSize: screenWidth / 16,
-                            fontFamily: "Nexa Bold",
-                            color: Colors.white,
-                            letterSpacing: 1.5,
+                          SizedBox(height: 8),
+                          Text(
+                            checkIn,
+                            style: TextStyle(
+                              fontSize: screenWidth / 16,
+                              fontFamily: "Nexa Bold",
+                              color: Colors.white,
+                              letterSpacing: 1.5,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   Container(
                     width: 1.5,
                     height: 60,
-                    color: Colors.white.withOpacity(0.5),
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    color: Colors.white.withOpacity(0.6),
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
                   ),
                   Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          "Check Out",
-                          style: TextStyle(
-                            fontSize: screenWidth / 24,
-                            fontFamily: "Nexa Light",
-                            color: Colors.redAccent,
-                            letterSpacing: 1.2,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "Check Out",
+                            style: TextStyle(
+                              fontSize: screenWidth / 24,
+                              fontFamily: "Cambria",
+                              color: Colors.redAccent,
+                              letterSpacing: 1.2,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          checkOut,
-                          style: TextStyle(
-                            fontSize: screenWidth / 16,
-                            fontFamily: "Nexa Bold",
-                            color: Colors.white,
-                            letterSpacing: 1.5,
+                          SizedBox(height: 8),
+                          Text(
+                            checkOut,
+                            style: TextStyle(
+                              fontSize: screenWidth / 16,
+                              fontFamily: "Nexa Bold",
+                              color: Colors.white,
+                              letterSpacing: 1.5,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -258,15 +267,9 @@ class _TodayScreenState extends State<TodayScreen> {
                     outerColor: Colors.white,
                     key: key,
                     onSubmit: () async {
-
-                      Timer(const Duration(seconds: 1), () {
-                        key.currentState!.reset();
-
-                      });
-
                       QuerySnapshot snap = await FirebaseFirestore.instance
                           .collection("Employee")
-                          .where('id', isEqualTo: User.username)
+                          .where('id', isEqualTo: User.employeeId)
                           .get();
 
                       DocumentSnapshot snap2 = await FirebaseFirestore.instance
@@ -288,6 +291,7 @@ class _TodayScreenState extends State<TodayScreen> {
                             .collection("Records")
                             .doc(DateFormat("dd MMMM yyyy").format(DateTime.now()))
                             .set({
+                          "date": Timestamp.now(),
                           "checkIn": checkIn,
                           "checkOut": DateFormat("hh:mm a").format(DateTime.now()),
                         });
@@ -303,9 +307,13 @@ class _TodayScreenState extends State<TodayScreen> {
                             .collection("Records")
                             .doc(DateFormat("dd MMMM yyyy").format(DateTime.now()))
                             .set({
+                          "date": Timestamp.now(),
                           "checkIn": DateFormat("hh:mm a").format(DateTime.now()),
+                          "checkOut": "--/--"
                         });
                       }
+
+                      key.currentState!.reset();
                     },
                   );
                 },

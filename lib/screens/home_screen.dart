@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -5,6 +6,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:zidio_attendance_project/Navigation%20screens/calendar_screen.dart';
 import 'package:zidio_attendance_project/Navigation%20screens/profile_screen.dart';
 import 'package:zidio_attendance_project/Navigation%20screens/today_screen.dart';
+
+import '../model/user.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,6 +23,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Color primary = const Color(0xFFB333FF);
 
   int currentIndex = 1;
+  
+  @override
+  void initState() {
+    super.initState();
+    
+    getId();
+  }
+  
+  void getId() async{
+    QuerySnapshot snap = await FirebaseFirestore.instance
+        .collection("Employee")
+        .where('id',isEqualTo: User.employeeId)
+        .get();
+
+    setState(() {
+      User.id = snap.docs[0].id;
+    });
+  }
 
   List<IconData> navigationIcons = [
     FontAwesomeIcons.solidCalendarDays,
@@ -34,10 +56,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: IndexedStack(
         index: currentIndex,
-        children: const [
-          CalendarScreen(),
-          TodayScreen(),
-          ProfileScreen(),
+        children: [
+          new CalendarScreen(),
+          new TodayScreen(),
+          new ProfileScreen(),
         ],
       ),
       
