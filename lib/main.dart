@@ -6,6 +6,7 @@ import 'package:zidio_attendance_project/screens/home_screen.dart';
 import 'package:zidio_attendance_project/screens/login_screen.dart';
 
 import 'firebase_options.dart';
+import 'model/user.dart';
 
 void main() async {
 
@@ -59,6 +60,7 @@ class _AuthCheckState extends State<AuthCheck> {
     try{
       if(sharedPreferences.getString("emp_id") != null){
         setState(() {
+          User.username = sharedPreferences.getString("emp_id")!;
           userAvailable = true;
         });
       }

@@ -1,6 +1,11 @@
+import 'dart:async';
 import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:slide_to_act/slide_to_act.dart';
+
+import '../model/user.dart';
 
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
@@ -14,6 +19,47 @@ class _TodayScreenState extends State<TodayScreen> {
   double screenWidth = 0;
   Color primary = const Color(0xFFB333FF);
   Color secondary = const Color(0xFF6200EA);
+
+  String checkIn = "--/--";
+  String checkOut = "--/--";
+
+  @override
+  void initState() {
+    super.initState();
+    _getRecord();
+  }
+
+  void _getRecord () async {
+    try{
+
+      QuerySnapshot snap = await FirebaseFirestore.instance
+          .collection("Employee")
+          .where('id', isEqualTo: User.username)
+          .get();
+
+      DocumentSnapshot snap2 = await FirebaseFirestore.instance
+          .collection("Employee")
+          .doc(snap.docs[0].id)
+          .collection("Records")
+          .doc(DateFormat("dd MMMM yyyy").format(DateTime.now()))
+          .get();
+
+      setState(() {
+        checkIn = snap2['checkIn'];
+        checkOut = snap2['checkOut'];
+      });
+
+    } catch(e) {
+      print("errrrrrrrrrrrrrrrororrrrrrrrr------> $e");
+      setState(() {
+        checkIn = "--/--";
+        checkOut = "--/--";
+      });
+    }
+
+    print(checkIn);
+    print(checkOut);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +81,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Welcome",
+                    "Welcome,",
                     style: TextStyle(
                       fontFamily: "Nexa Light",
                       fontSize: screenWidth / 20,
@@ -43,7 +89,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     ),
                   ),
                   Text(
-                    "Employee",
+                    "Employee ${User.username}",
                     style: TextStyle(
                       fontFamily: "Nexa Bold",
                       fontSize: screenWidth / 18,
@@ -105,7 +151,7 @@ class _TodayScreenState extends State<TodayScreen> {
                           ),
                         ),
                         Text(
-                          "09:30",
+                          checkIn,
                           style: TextStyle(
                             fontSize: screenWidth / 18,
                             fontFamily: "Nexa Bold",
@@ -129,7 +175,7 @@ class _TodayScreenState extends State<TodayScreen> {
                           ),
                         ),
                         Text(
-                          "--/--",
+                          checkOut,
                           style: TextStyle(
                             fontSize: screenWidth / 18,
                             fontFamily: "Nexa Bold",
@@ -146,7 +192,7 @@ class _TodayScreenState extends State<TodayScreen> {
             // Date and Time
             RichText(
               text: TextSpan(
-                text: "20",
+                text: DateTime.now().day.toString(),
                 style: TextStyle(
                   color: primary,
                   fontSize: screenWidth / 18,
@@ -154,7 +200,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 ),
                 children: [
                   TextSpan(
-                    text: " August 2024",
+                    text: DateFormat(' MMMM yyyy').format(DateTime.now()),
                     style: TextStyle(
                       color: Colors.black,
                       fontSize: screenWidth / 20,
@@ -164,23 +210,28 @@ class _TodayScreenState extends State<TodayScreen> {
                 ],
               ),
             ),
-            Text(
-              "15:00:01 PM",
-              style: TextStyle(
-                fontSize: screenWidth / 20,
-                color: Colors.black54,
-              ),
+            StreamBuilder(
+              stream: Stream.periodic(const Duration(seconds: 1)),
+              builder: (context, snapshot) {
+                return Text(
+                  DateFormat("hh:mm:ss a").format(DateTime.now()),
+                  style: TextStyle(
+                    fontSize: screenWidth / 20,
+                    color: Colors.black54,
+                  ),
+                );
+              }
             ),
 
             // Slide to Check Out Button
-            Container(
+            checkOut == "--/--" ? Container(
               margin: const EdgeInsets.only(top: 30),
               child: Builder(
                 builder: (context) {
                   final GlobalKey<SlideActionState> key = GlobalKey();
 
                   return SlideAction(
-                    text: "Slide to Check Out",
+                    text: checkIn == "--/--" ? "Slide to Check In" : "Slide to Check Out",
                     textStyle: TextStyle(
                       fontFamily: "Nexa Bold",
                       fontSize: screenWidth / 18,
@@ -189,13 +240,109 @@ class _TodayScreenState extends State<TodayScreen> {
                     innerColor: primary,
                     outerColor: Colors.white,
                     key: key,
-                    onSubmit: () {
-                      key.currentState!.reset();
+                    onSubmit: () async {
+
+                      Timer(const Duration(seconds: 1), () {
+                        key.currentState!.reset();
+
+                      });
+
+                      QuerySnapshot snap = await FirebaseFirestore.instance
+                          .collection("Employee")
+                          .where('id', isEqualTo: User.username)
+                          .get();
+
+                      DocumentSnapshot snap2 = await FirebaseFirestore.instance
+                          .collection("Employee")
+                          .doc(snap.docs[0].id)
+                          .collection("Records")
+                          .doc(DateFormat("dd MMMM yyyy").format(DateTime.now()))
+                          .get();
+
+                      try{
+                        String checkIn = snap2['checkIn'];
+                        setState(() {
+                          checkOut   = DateFormat("hh:mm a").format(DateTime.now());
+                        });
+
+                        await FirebaseFirestore.instance
+                            .collection("Employee")
+                            .doc(snap.docs[0].id)
+                            .collection("Records")
+                            .doc(DateFormat("dd MMMM yyyy").format(DateTime.now()))
+                            .set({
+                          "checkIn": checkIn,
+                          "checkOut": DateFormat("hh:mm a").format(DateTime.now()),
+                        });
+
+                      } catch(e){
+                        setState(() {
+                          checkIn = DateFormat("hh:mm a").format(DateTime.now());
+                        });
+
+                        await FirebaseFirestore.instance
+                            .collection("Employee")
+                            .doc(snap.docs[0].id)
+                            .collection("Records")
+                            .doc(DateFormat("dd MMMM yyyy").format(DateTime.now()))
+                            .set({
+                          "checkIn": DateFormat("hh:mm a").format(DateTime.now()),
+                        });
+                      }
                     },
                   );
                 },
               ),
-            ),
+            ) : Container(
+              alignment: Alignment.center,
+              margin: const EdgeInsets.symmetric(vertical: 140),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(5, 5),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: Colors.greenAccent,
+                    size: screenWidth / 12,
+                  ),
+                  const SizedBox(width:8),
+                  Expanded(
+                    child: Text(
+                      "Attendance Completed for Today!",
+                      style: TextStyle(
+                        fontSize: screenWidth / 24,
+                        fontFamily: "Nexa Bold",
+                        color: Colors.greenAccent,
+                        shadows: [
+                          Shadow(
+                            blurRadius: 10,
+                            color: Colors.black.withOpacity(0.5),
+                            offset: const Offset(2, 5),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ],
+              ),
+            )
+
           ],
         ),
       ),
