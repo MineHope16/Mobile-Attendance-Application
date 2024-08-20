@@ -17,6 +17,7 @@ class TodayScreen extends StatefulWidget {
 class _TodayScreenState extends State<TodayScreen> {
   double screenHeight = 0;
   double screenWidth = 0;
+
   Color primary = const Color(0xFFB333FF);
   Color secondary = const Color(0xFF6200EA);
 
@@ -115,71 +116,85 @@ class _TodayScreenState extends State<TodayScreen> {
 
             // Check-in/out Card
             Container(
-              margin: const EdgeInsets.only(top: 12, bottom: 32),
-              height: 150,
+              margin: const EdgeInsets.symmetric(vertical: 20),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              height: 160,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [primary.withOpacity(0.8), secondary.withOpacity(0.8)],
+                  colors: [primary, secondary],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                boxShadow: const [
+                boxShadow: [
                   BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(2, 2),
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: Offset(0, 10),
                   )
                 ],
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
               ),
-
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           "Check In",
                           style: TextStyle(
-                            fontSize: screenWidth / 20,
+                            fontSize: screenWidth / 24,
                             fontFamily: "Nexa Light",
-                            color: Colors.white70,
+                            color: Colors.lightGreen,
+                            letterSpacing: 1.2,
                           ),
                         ),
+                        SizedBox(height: 8),
                         Text(
                           checkIn,
                           style: TextStyle(
-                            fontSize: screenWidth / 18,
+                            fontSize: screenWidth / 16,
                             fontFamily: "Nexa Bold",
                             color: Colors.white,
+                            letterSpacing: 1.5,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  Container(
+                    width: 1.5,
+                    height: 60,
+                    color: Colors.white.withOpacity(0.5),
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                  ),
                   Expanded(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           "Check Out",
                           style: TextStyle(
-                            fontSize: screenWidth / 20,
+                            fontSize: screenWidth / 24,
                             fontFamily: "Nexa Light",
-                            color: Colors.white70,
+                            color: Colors.redAccent,
+                            letterSpacing: 1.2,
                           ),
                         ),
+                        SizedBox(height: 8),
                         Text(
                           checkOut,
                           style: TextStyle(
-                            fontSize: screenWidth / 18,
+                            fontSize: screenWidth / 16,
                             fontFamily: "Nexa Bold",
                             color: Colors.white,
+                            letterSpacing: 1.5,
                           ),
                         ),
                       ],
@@ -188,6 +203,8 @@ class _TodayScreenState extends State<TodayScreen> {
                 ],
               ),
             ),
+
+            const SizedBox(height: 20),
 
             // Date and Time
             RichText(
@@ -225,7 +242,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
             // Slide to Check Out Button
             checkOut == "--/--" ? Container(
-              margin: const EdgeInsets.only(top: 30),
+              margin: const EdgeInsets.symmetric(vertical: 140),
               child: Builder(
                 builder: (context) {
                   final GlobalKey<SlideActionState> key = GlobalKey();
@@ -262,7 +279,7 @@ class _TodayScreenState extends State<TodayScreen> {
                       try{
                         String checkIn = snap2['checkIn'];
                         setState(() {
-                          checkOut   = DateFormat("hh:mm a").format(DateTime.now());
+                          checkOut = DateFormat("hh:mm a").format(DateTime.now());
                         });
 
                         await FirebaseFirestore.instance
