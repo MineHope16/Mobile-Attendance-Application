@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -15,12 +14,11 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  double screenheight = 0;
-  double screenwidth = 0;
+  double screenHeight = 0;
+  double screenWidth = 0;
 
-  Color primary = const Color(0xFFB333FF);
-  Color secondary = const Color(0xFF6200EA);
-  String birth = "Date of Birth";
+  Color primaryColor = const Color(0xFFB333FF);
+  String birthDate = "Date of Birth";
 
   TextEditingController firstNameController = TextEditingController();
   TextEditingController lastNameController = TextEditingController();
@@ -28,7 +26,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<Map<String, dynamic>> fetchProfileData() async {
     try {
-      DocumentSnapshot doc = await FirebaseFirestore.instance.collection("Employee").doc(User.id).get();
+      DocumentSnapshot doc = await FirebaseFirestore.instance
+          .collection("Employee")
+          .doc(User_info.id)
+          .get();
       if (doc.exists) {
         return {
           'firstName': doc['firstName'] ?? '',
@@ -45,7 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void picUploadProfilePic() async {
+  void uploadProfilePic() async {
     try {
       final image = await ImagePicker().pickImage(
         source: ImageSource.gallery,
@@ -59,15 +60,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      Reference ref = FirebaseStorage.instance.ref().child("${User.employeeId.toLowerCase()}_profilepic.jpg");
+      Reference ref = FirebaseStorage.instance
+          .ref()
+          .child("${User_info.employeeId.toLowerCase()}_profilepic.jpg");
       await ref.putFile(File(image.path));
       String downloadURL = await ref.getDownloadURL();
 
       setState(() {
-        User.profilePicLink = downloadURL;
+        User_info.profilePicLink = downloadURL;
       });
 
-      await FirebaseFirestore.instance.collection("Employee").doc(User.id).update({
+      await FirebaseFirestore.instance.collection("Employee").doc(User_info.id).update({
         'profilePic': downloadURL,
       });
 
@@ -77,37 +80,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    fetchProfileData().then((data) {
+      if (data.isNotEmpty) {
+        setState(() {
+          firstNameController.text = data['firstName'] ?? '';
+          lastNameController.text = data['lastName'] ?? '';
+          addressController.text = data['address'] ?? '';
+          birthDate = data['birthDate'] ?? 'Date of Birth';
+        });
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    screenheight = MediaQuery.of(context).size.height;
-    screenwidth = MediaQuery.of(context).size.width;
+    screenHeight = MediaQuery.of(context).size.height;
+    screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: fetchProfileData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          } else if (snapshot.hasData) {
-            final data = snapshot.data!;
-            final profilePicLink = data['profilePic'] as String? ?? '';
-            final firstName = data['firstName'] as String? ?? '';
-            final lastName = data['lastName'] as String? ?? '';
-            final birthDate = data['birthDate'] as String? ?? 'Date of Birth';
-            final address = data['address'] as String? ?? '';
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: fetchProfileData(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text("Error: ${snapshot.error}"));
+            } else if (snapshot.hasData) {
+              final data = snapshot.data!;
+              final profilePicLink = data['profilePic'] as String? ?? '';
 
-            firstNameController.text = firstName;
-            lastNameController.text = lastName;
-            addressController.text = address;
-            birth = birthDate;
-
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
+              return Column(
                 children: [
                   GestureDetector(
                     onTap: () {
-                      picUploadProfilePic();
+                      uploadProfilePic();
                     },
                     child: Container(
                       margin: const EdgeInsets.only(top: 80, bottom: 20),
@@ -116,16 +126,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        color: primary,
+                        color: primaryColor,
                       ),
                       child: Center(
-                        child: profilePicLink == "" ? const Icon(
+                        child: profilePicLink.isEmpty
+                            ? const Icon(
                           Icons.person_outline_outlined,
                           color: Colors.white,
                           size: 80,
-                        ) : ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: Image.network(profilePicLink)
+                        )
+                            : ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.network(profilePicLink),
                         ),
                       ),
                     ),
@@ -133,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Align(
                     alignment: Alignment.center,
                     child: Text(
-                      "Employee ${User.employeeId}",
+                      "Employee ${User_info.employeeId}",
                       style: const TextStyle(
                         fontFamily: "Nexa Bold",
                         fontSize: 22,
@@ -141,65 +153,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  User.canEdit ? textFields("First Name", "First Name", firstNameController) : field("First Name", firstName),
-                  User.canEdit ? textFields("Last Name", "Last Name", lastNameController) : field("Last Name", lastName),
-                  User.canEdit ? GestureDetector(
-                    onTap: () {
-                      showDatePicker(
+                  User_info.canEdit
+                      ? textFields("First Name", "First Name", firstNameController)
+                      : field("First Name", firstNameController.text),
+                  User_info.canEdit
+                      ? textFields("Last Name", "Last Name", lastNameController)
+                      : field("Last Name", lastNameController.text),
+                  User_info.canEdit
+                      ? GestureDetector(
+                    onTap: () async {
+                      DateTime? pickedDate = await showDatePicker(
                         context: context,
                         initialDate: DateTime.now(),
                         firstDate: DateTime(1950),
                         lastDate: DateTime.now(),
-                      ).then((value) {
+                      );
+
+                      if (pickedDate != null) {
                         setState(() {
-                          birth = DateFormat("dd MMMM, yyyy").format(value!);
+                          birthDate = DateFormat("dd MMMM, yyyy").format(pickedDate);
                         });
-                      });
+                      }
                     },
-                    child: field("Date of Birth", birth),
-                  ) : field("Date of Birth", birthDate),
-                  User.canEdit ? textFields("Address", "Address", addressController) : field("Address", address),
-                  User.canEdit ? GestureDetector(
+                    child: field("Date of Birth", birthDate),
+                  )
+                      : field("Date of Birth", birthDate),
+                  User_info.canEdit
+                      ? textFields("Address", "Address", addressController)
+                      : field("Address", addressController.text),
+                  User_info.canEdit
+                      ? GestureDetector(
                     onTap: () async {
                       String firstName = firstNameController.text;
                       String lastName = lastNameController.text;
-                      String birthDate = birth;
+                      String birthDate = this.birthDate;
                       String address = addressController.text;
 
-                      if (User.canEdit) {
-                        if (firstName.isEmpty) {
-                          showSnackBar("Please enter your first name");
-                        } else if (lastName.isEmpty) {
-                          showSnackBar("Please enter your last name");
-                        } else if (birthDate.isEmpty) {
-                          showSnackBar("Please enter your birth date");
-                        } else if (address.isEmpty) {
-                          showSnackBar("Please enter your address");
-                        } else {
-                          await FirebaseFirestore.instance.collection("Employee").doc(User.id).update({
-                            "firstName": firstName,
-                            "lastName": lastName,
-                            "birthDate": birthDate,
-                            "address": address,
-                            "canEdit": false,
-                          }).then((value) {
-                            setState(() {
-                              User.canEdit = false;
-                              User.firstName = firstName;
-                              User.lastName = lastName;
-                              User.birthDate = birthDate;
-                              User.address = address;
-                            });
-                          });
-                        }
+                      if (firstName.isEmpty) {
+                        showSnackBar("Please enter your first name");
+                      } else if (lastName.isEmpty) {
+                        showSnackBar("Please enter your last name");
+                      } else if (birthDate.isEmpty) {
+                        showSnackBar("Please enter your birth date");
+                      } else if (address.isEmpty) {
+                        showSnackBar("Please enter your address");
                       } else {
-                        showSnackBar("You cannot edit anymore, kindly contact the support team.");
+                        await FirebaseFirestore.instance.collection("Employee").doc(User_info.id).update({
+                          "firstName": firstName,
+                          "lastName": lastName,
+                          "birthDate": birthDate,
+                          "address": address,
+                          "canEdit": false,
+                        }).then((value) {
+                          setState(() {
+                            User_info.canEdit = false;
+                            User_info.firstName = firstName;
+                            User_info.lastName = lastName;
+                            User_info.birthDate = birthDate;
+                            User_info.address = address;
+                          });
+                          showSnackBar("Profile updated successfully!");
+                        });
                       }
                     },
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       height: kToolbarHeight,
-                      width: screenwidth,
+                      width: screenWidth,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(4),
                         color: Colors.red,
@@ -215,14 +235,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
-                  ) : const SizedBox(),
+                  )
+                      : const SizedBox(),
                 ],
-              ),
-            );
-          } else {
-            return Center(child: Text("No data available"));
-          }
-        },
+              );
+            } else {
+              return const Center(child: Text("No data available"));
+            }
+          },
+        ),
       ),
     );
   }
@@ -245,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.only(left: 11),
           height: kToolbarHeight,
-          width: screenwidth,
+          width: screenWidth,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(4),
             border: Border.all(
@@ -283,27 +304,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         Container(
-          margin: EdgeInsets.only(bottom: 12),
+          margin: const EdgeInsets.only(bottom: 12),
           child: TextFormField(
             controller: controller,
             cursorColor: Colors.black54,
             maxLines: 1,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(
-                color: Colors.black54,
-                fontFamily: "Nexa Bold",
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(4),
               ),
-              enabledBorder: const OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: Colors.black54,
-                ),
-              ),
-              focusedBorder: const OutlineInputBorder(
-                borderSide: BorderSide(
-                  color: Colors.black54,
-                ),
-              ),
+              contentPadding: const EdgeInsets.only(left: 15),
             ),
           ),
         ),
@@ -315,7 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

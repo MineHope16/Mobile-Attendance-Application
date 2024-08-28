@@ -34,7 +34,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
       QuerySnapshot snap = await FirebaseFirestore.instance
           .collection("Employee")
-          .where('id', isEqualTo: User.employeeId)
+          .where('id', isEqualTo: User_info.employeeId)
           .get();
 
       DocumentSnapshot snap2 = await FirebaseFirestore.instance
@@ -85,7 +85,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     ),
                   ),
                   Text(
-                    "Employee ${User.employeeId}",
+                    "Employee ${User_info.employeeId}",
                     style: TextStyle(
                       fontFamily: "Nexa Bold",
                       fontSize: screenWidth / 18,
@@ -268,7 +268,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     onSubmit: () async {
                       QuerySnapshot snap = await FirebaseFirestore.instance
                           .collection("Employee")
-                          .where('id', isEqualTo: User.employeeId)
+                          .where('id', isEqualTo: User_info.employeeId)
                           .get();
 
                       DocumentSnapshot snap2 = await FirebaseFirestore.instance

@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zidio_attendance_project/screens/home_screen.dart';
+import 'package:zidio_attendance_project/screens/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,103 +20,137 @@ class _LoginScreenState extends State<LoginScreen> {
   double screenwidth = 0;
   Color primary = const Color(0xFFB333FF);
 
-  late SharedPreferences sharedPreferences;
+  SharedPreferences? sharedPreferences;
+
+  @override
+  void initState() {
+    super.initState();
+    initSharedPreferences();
+  }
+
+  Future<void> initSharedPreferences() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool isKeyboardVisible = KeyboardVisibilityProvider.isKeyboardVisible(context);
     screenheight = MediaQuery.of(context).size.height;
     screenwidth = MediaQuery.of(context).size.width;
-
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Column(
         children: [
-          isKeyboardVisible ? const SizedBox(height: 20,) :
           Container(
-            height: screenheight / 4,
+            padding: EdgeInsets.only(top: 35),
+            height: 280,
             width: screenwidth,
             decoration: BoxDecoration(
-              color: primary,
+                color: primary,
+                borderRadius: BorderRadius.circular(25)
             ),
-
-            child: const Center(
-              child: Icon(
-                Icons.person,
-                color: Colors.white,
-                size: 150,
-              ),
+            child: Column(
+              children: [
+                const Center(
+                  child: Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 180,
+                  ),
+                ),
+                Container(
+                  child: Text(
+                    "Login",
+                    style: TextStyle(
+                      fontSize: screenwidth / 12,
+                      fontFamily: "Nexa Bold",
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-
-          Container(
-            margin: const EdgeInsets.all(20),
-            child: Text(
-              "Login",
-              style: TextStyle(
-                fontSize: screenwidth / 15,
-                fontFamily: "Nexa Bold",
-              ),
-            ),
-          ),
-
           Container(
             alignment: Alignment.centerLeft,
-            margin: EdgeInsets.symmetric(
+            margin: EdgeInsets.symmetric(vertical: 20,
               horizontal: screenwidth / 12,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
                 fieldTitle("Employee ID"),
-                customField("Enter your Employee ID",idController, false, "person"),
-
+                customField("Enter your Employee ID", idController, false, "person"),
                 const SizedBox(height: 25),
-
                 fieldTitle("Password"),
-                customField("Enter your Password",passController, true, "key"),
-
-                const SizedBox(height: 25),
-
+                customField("Enter your Password", passController, true, "key"),
+                const SizedBox(height: 30),
                 GestureDetector(
                   onTap: () async {
                     FocusScope.of(context).unfocus();
                     String id = idController.text.trim();
                     String pass = passController.text.trim();
 
+                    if (id.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Employee ID cannot be empty!")),
+                      );
+                      return;
+                    }
+                    if (pass.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Password cannot be empty!")),
+                      );
+                      return;
+                    }
 
-                    if (id.isEmpty){
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Employee Id Cannot be Empty !")));
-                    } else if (pass.isEmpty){
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password Cannot be Empty !")));
-                    } else {
-                      QuerySnapshot snap = await FirebaseFirestore.instance.collection("Employee").where('id', isEqualTo: id).get();
+                    try {
+                      QuerySnapshot snap = await FirebaseFirestore.instance
+                          .collection("Employee")
+                          .where('id', isEqualTo: id)
+                          .get();
 
-                      try {
-                        if (pass == snap.docs[0]['password']){
-                          sharedPreferences = await SharedPreferences.getInstance();
-                          sharedPreferences.setString("emp_id", id).then((_) {
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomeScreen()));
-                          });
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password is Incorrect !")));
-
-                        }
-                        
-                      } catch (e){
-                        print("error ->${e.toString()}");
-                        if (e.toString() == "RangeError (index): Invalid value: Valid value range is empty: 0"){
-                          setState(() {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Employee Does Not Exist !")));
-                          });
-                        } else {
-                          setState(() {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("An Error Occured !")));
-                          });
-                        }
+                      if (snap.docs.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Employee does not exist!")),
+                        );
+                        return;
                       }
+
+                      final doc = snap.docs[0];
+                      final data = doc.data() as Map<String, dynamic>; // Cast to Map<String, dynamic>
+                      final password = data['password']; // Access the password field
+
+                      if (password == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Password data is missing!")),
+                        );
+                        return;
+                      }
+
+                      if (pass == password) {
+                        if (sharedPreferences != null) {
+                          await sharedPreferences!.setString("emp_id", id);
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(builder: (context) => const HomeScreen()),
+                                (route) => false, // Remove all previous routes
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("SharedPreferences not initialized!")),
+                          );
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Password is incorrect!")),
+                        );
+                      }
+                    } catch (e) {
+                      print("error -> ${e.toString()}");
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("An error occurred!")),
+                      );
                     }
                   },
                   child: Container(
@@ -135,8 +171,41 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                   ),
+                ),
+                const SizedBox(height: 30,),
+                Center(
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        const TextSpan(
+                          text: "Don't have an account? ",
+                          style: TextStyle(
+                            color: Colors.black87,
+                            fontSize: 16,
+                          ),
+                        ),
+                        TextSpan(
+                          text: "Register Now",
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const RegisterScreen(),
+                                ),
+                              );
+                            },
+                        ),
+                      ],
+                    ),
+                  ),
                 )
-
               ],
             ),
           ),
@@ -145,44 +214,45 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget fieldTitle(String title){
+  Widget fieldTitle(String title) {
     return Container(
-      margin: const EdgeInsets.only(bottom : 12),
+      margin: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
         style: TextStyle(
-            fontSize: screenwidth / 26,
-            fontFamily: "Nexa Bold"
+          fontSize: screenwidth / 26,
+          fontFamily: "Nexa Bold",
         ),
       ),
     );
   }
 
-  Widget customField(String hint,TextEditingController controller, bool obsText,String iconText){
+  Widget customField(String hint, TextEditingController controller, bool obsText, String iconText) {
     return Container(
       width: screenwidth,
       decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.all(Radius.circular(12)),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black26,
-                blurRadius: 10,
-                offset: Offset(2,2)
-            )
-          ]
+        color: Colors.white,
+        borderRadius: BorderRadius.all(Radius.circular(12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 10,
+            offset: Offset(2, 2),
+          ),
+        ],
       ),
-
       child: Row(
         children: [
-          iconText == "person" ? Container(
+          iconText == "person"
+              ? Container(
             width: screenwidth / 6,
             child: Icon(
               Icons.person,
               color: primary,
               size: screenwidth / 15,
             ),
-          ) : Container(
+          )
+              : Container(
             width: screenwidth / 6,
             child: Icon(
               Icons.key,
@@ -190,7 +260,6 @@ class _LoginScreenState extends State<LoginScreen> {
               size: screenwidth / 15,
             ),
           ),
-
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(right: screenwidth / 10),
@@ -199,21 +268,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 enableSuggestions: false,
                 autocorrect: false,
                 decoration: InputDecoration(
-                    contentPadding: EdgeInsets.symmetric(
-                        vertical: screenheight / 35
-                    ),
-                    border: InputBorder.none,
-                    hintText: hint,
+                  contentPadding: EdgeInsets.symmetric(vertical: screenheight / 35),
+                  border: InputBorder.none,
+                  hintText: hint,
                 ),
                 maxLines: 1,
                 obscureText: obsText,
-
               ),
             ),
-          )
+          ),
         ],
       ),
     );
   }
 }
-

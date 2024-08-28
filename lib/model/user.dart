@@ -1,4 +1,4 @@
-class User{
+class User_info{
   static String employeeId = "";
   static String id = "";
   static String firstName = "";

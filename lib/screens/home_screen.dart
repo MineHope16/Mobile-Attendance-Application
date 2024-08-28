@@ -34,13 +34,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _getCredentials() async {
     try {
-      DocumentSnapshot doc = await FirebaseFirestore.instance.collection("Employee").doc(User.id).get();
+      DocumentSnapshot doc = await FirebaseFirestore.instance.collection("Employee").doc(User_info.id).get();
       setState(() {
-        User.canEdit = doc['canEdit'];
-        User.firstName = doc['firstName'];
-        User.lastName = doc['lastName'];
-        User.birthDate = doc['birthDate'];
-        User.address = doc['address'];
+        User_info.canEdit = doc['canEdit'];
+        User_info.firstName = doc['firstName'];
+        User_info.lastName = doc['lastName'];
+        User_info.birthDate = doc['birthDate'];
+        User_info.address = doc['address'];
       });
     } catch (e) {
       return;
@@ -48,20 +48,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _getProfilePic() async {
-    DocumentSnapshot doc = await FirebaseFirestore.instance.collection("Employee").doc(User.id).get();
+    DocumentSnapshot doc = await FirebaseFirestore.instance.collection("Employee").doc(User_info.id).get();
     setState(() {
-      User.profilePicLink = doc['profilePic'];
+      User_info.profilePicLink = doc['profilePic'];
     });
   }
   
   Future<void> getId() async{
     QuerySnapshot snap = await FirebaseFirestore.instance
         .collection("Employee")
-        .where('id',isEqualTo: User.employeeId)
+        .where('id',isEqualTo: User_info.employeeId)
         .get();
 
     setState(() {
-      User.id = snap.docs[0].id;
+      User_info.id = snap.docs[0].id;
     });
   }
 
