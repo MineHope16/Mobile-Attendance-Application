@@ -181,6 +181,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         await FirebaseFirestore.instance.collection("Employee").doc(result.user?.uid).set({
                           'id': "AU$randomNumber",
                           'password' : passController.text,
+                          "address" : "",
+                          "birthDate" : "",
+                          "firstName" : "",
+                          "lastName" : "",
+                          "profilePic" : "",
                         });
 
                         showDialog(

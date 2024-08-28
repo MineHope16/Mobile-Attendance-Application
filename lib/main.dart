@@ -5,6 +5,7 @@ import 'package:month_year_picker/month_year_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zidio_attendance_project/screens/home_screen.dart';
 import 'package:zidio_attendance_project/screens/login_screen.dart';
+import 'package:zidio_attendance_project/screens/splash_screen.dart';
 
 import 'firebase_options.dart';
 import 'model/user.dart';
@@ -79,7 +80,7 @@ class _AuthCheckState extends State<AuthCheck> {
 
   @override
   Widget build(BuildContext context) {
-    return userAvailable? const HomeScreen() : const LoginScreen();
+    return userAvailable? const HomeScreen() : const SplashScreen();
   }
 }
 

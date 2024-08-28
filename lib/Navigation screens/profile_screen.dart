@@ -1,10 +1,14 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zidio_attendance_project/model/user.dart';
+import 'package:zidio_attendance_project/screens/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,11 +18,12 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  double screenHeight = 0;
-  double screenWidth = 0;
+  double screenheight = 0;
+  double screenwidth = 0;
 
-  Color primaryColor = const Color(0xFFB333FF);
-  String birthDate = "Date of Birth";
+  Color primary = const Color(0xFFB333FF);
+  Color secondary = const Color(0xFF6200EA);
+  String birth = "Date of Birth";
 
   TextEditingController firstNameController = TextEditingController();
   TextEditingController lastNameController = TextEditingController();
@@ -26,10 +31,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<Map<String, dynamic>> fetchProfileData() async {
     try {
-      DocumentSnapshot doc = await FirebaseFirestore.instance
-          .collection("Employee")
-          .doc(User_info.id)
-          .get();
+      DocumentSnapshot doc = await FirebaseFirestore.instance.collection("Employee").doc(User_info.id).get();
       if (doc.exists) {
         return {
           'firstName': doc['firstName'] ?? '',
@@ -46,7 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void uploadProfilePic() async {
+  void picUploadProfilePic() async {
     try {
       final image = await ImagePicker().pickImage(
         source: ImageSource.gallery,
@@ -60,9 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      Reference ref = FirebaseStorage.instance
-          .ref()
-          .child("${User_info.employeeId.toLowerCase()}_profilepic.jpg");
+      Reference ref = FirebaseStorage.instance.ref().child("${User_info.employeeId.toLowerCase()}_profilepic.jpg");
       await ref.putFile(File(image.path));
       String downloadURL = await ref.getDownloadURL();
 
@@ -79,65 +79,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    fetchProfileData().then((data) {
-      if (data.isNotEmpty) {
-        setState(() {
-          firstNameController.text = data['firstName'] ?? '';
-          lastNameController.text = data['lastName'] ?? '';
-          addressController.text = data['address'] ?? '';
-          birthDate = data['birthDate'] ?? 'Date of Birth';
-        });
-      }
-    });
+  Future<void> logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      // Clear SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+      // Navigate to the login screen
+    } catch (e) {
+      showSnackBar("An error occurred during logout: ${e.toString()}");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    screenHeight = MediaQuery.of(context).size.height;
-    screenWidth = MediaQuery.of(context).size.width;
-
+    screenheight = MediaQuery.of(context).size.height;
+    screenwidth = MediaQuery.of(context).size.width;
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: FutureBuilder<Map<String, dynamic>>(
-          future: fetchProfileData(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text("Error: ${snapshot.error}"));
-            } else if (snapshot.hasData) {
-              final data = snapshot.data!;
-              final profilePicLink = data['profilePic'] as String? ?? '';
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: fetchProfileData(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          } else if (snapshot.hasData) {
+            final data = snapshot.data!;
+            final profilePicLink = data['profilePic'] as String? ?? '';
+            final firstName = data['firstName'] as String? ?? '';
+            final lastName = data['lastName'] as String? ?? '';
+            final birthDate = data['birthDate'] as String? ?? 'Date of Birth';
+            final address = data['address'] as String? ?? '';
 
-              return Column(
+            firstNameController.text = firstName;
+            lastNameController.text = lastName;
+            addressController.text = address;
+            birth = birthDate;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
                 children: [
                   GestureDetector(
                     onTap: () {
-                      uploadProfilePic();
+                      picUploadProfilePic();
                     },
                     child: Container(
-                      margin: const EdgeInsets.only(top: 80, bottom: 20),
-                      height: 120,
-                      width: 120,
+                      margin: const EdgeInsets.only(top: 50, bottom: 20),
+                      height: 150,
+                      width: 150,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(20),
-                        color: primaryColor,
+                        color: primary,
                       ),
                       child: Center(
-                        child: profilePicLink.isEmpty
-                            ? const Icon(
+                        child: profilePicLink == "" ? const Icon(
                           Icons.person_outline_outlined,
                           color: Colors.white,
                           size: 80,
-                        )
-                            : ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: Image.network(profilePicLink),
+                        ) : ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.network(profilePicLink)
                         ),
                       ),
                     ),
@@ -153,97 +159,108 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  User_info.canEdit
-                      ? textFields("First Name", "First Name", firstNameController)
-                      : field("First Name", firstNameController.text),
-                  User_info.canEdit
-                      ? textFields("Last Name", "Last Name", lastNameController)
-                      : field("Last Name", lastNameController.text),
-                  User_info.canEdit
-                      ? GestureDetector(
-                    onTap: () async {
-                      DateTime? pickedDate = await showDatePicker(
+                  User_info.canEdit ? textFields("First Name", "First Name", firstNameController) : field("First Name", firstName),
+                  User_info.canEdit ? textFields("Last Name", "Last Name", lastNameController) : field("Last Name", lastName),
+                  User_info.canEdit ? GestureDetector(
+                    onTap: () {
+                      showDatePicker(
                         context: context,
                         initialDate: DateTime.now(),
                         firstDate: DateTime(1950),
                         lastDate: DateTime.now(),
-                      );
-
-                      if (pickedDate != null) {
+                      ).then((value) {
                         setState(() {
-                          birthDate = DateFormat("dd MMMM, yyyy").format(pickedDate);
+                          birth = DateFormat("dd MMMM, yyyy").format(value!);
                         });
-                      }
+                      });
                     },
-                    child: field("Date of Birth", birthDate),
-                  )
-                      : field("Date of Birth", birthDate),
-                  User_info.canEdit
-                      ? textFields("Address", "Address", addressController)
-                      : field("Address", addressController.text),
-                  User_info.canEdit
-                      ? GestureDetector(
+                    child: field("Date of Birth", birth),
+                  ) : field("Date of Birth", birthDate),
+                  User_info.canEdit ? textFields("Address", "Address", addressController) : field("Address", address),
+                  User_info.canEdit ? GestureDetector(
                     onTap: () async {
                       String firstName = firstNameController.text;
                       String lastName = lastNameController.text;
-                      String birthDate = this.birthDate;
+                      String birthDate = birth;
                       String address = addressController.text;
 
-                      if (firstName.isEmpty) {
-                        showSnackBar("Please enter your first name");
-                      } else if (lastName.isEmpty) {
-                        showSnackBar("Please enter your last name");
-                      } else if (birthDate.isEmpty) {
-                        showSnackBar("Please enter your birth date");
-                      } else if (address.isEmpty) {
-                        showSnackBar("Please enter your address");
-                      } else {
-                        await FirebaseFirestore.instance.collection("Employee").doc(User_info.id).update({
-                          "firstName": firstName,
-                          "lastName": lastName,
-                          "birthDate": birthDate,
-                          "address": address,
-                          "canEdit": false,
-                        }).then((value) {
-                          setState(() {
-                            User_info.canEdit = false;
-                            User_info.firstName = firstName;
-                            User_info.lastName = lastName;
-                            User_info.birthDate = birthDate;
-                            User_info.address = address;
+                      if (User_info.canEdit) {
+                        if (firstName.isEmpty) {
+                          showSnackBar("Please enter your first name");
+                        } else if (lastName.isEmpty) {
+                          showSnackBar("Please enter your last name");
+                        } else if (birthDate.isEmpty) {
+                          showSnackBar("Please enter your birth date");
+                        } else if (address.isEmpty) {
+                          showSnackBar("Please enter your address");
+                        } else {
+                          await FirebaseFirestore.instance.collection("Employee").doc(User_info.id).update({
+                            "firstName": firstName,
+                            "lastName": lastName,
+                            "birthDate": birthDate,
+                            "address": address,
+                            "canEdit": false,
+                          }).then((value) {
+                            setState(() {
+                              User_info.canEdit = false;
+                              User_info.firstName = firstName;
+                              User_info.lastName = lastName;
+                              User_info.birthDate = birthDate;
+                              User_info.address = address;
+                            });
                           });
-                          showSnackBar("Profile updated successfully!");
-                        });
+                        }
+                      } else {
+                        showSnackBar("You cannot edit anymore, kindly contact the support team.");
                       }
                     },
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       height: kToolbarHeight,
-                      width: screenWidth,
+                      width: screenwidth,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(4),
-                        color: Colors.red,
+                        color: primary,
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           "SAVE",
                           style: TextStyle(
                             fontFamily: "Nexa Bold",
                             color: Colors.white,
-                            fontSize: 16,
+                            fontSize: 18,
                           ),
                         ),
                       ),
                     ),
-                  )
-                      : const SizedBox(),
+                  ) : const SizedBox(),
+
+                  // Logout Button
+                  SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      logout();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: secondary, // Background color
+                      padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+                    ),
+                    child: Text(
+                      'Logout',
+                      style: TextStyle(
+                        fontFamily: "Nexa Bold",
+                        fontSize: 16,
+                        color: Colors.white
+                      ),
+                    ),
+                  ),
                 ],
-              );
-            } else {
-              return const Center(child: Text("No data available"));
-            }
-          },
-        ),
+              ),
+            );
+          } else {
+            return Center(child: Text("No data available"));
+          }
+        },
       ),
     );
   }
@@ -264,24 +281,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         Container(
           margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.only(left: 11),
           height: kToolbarHeight,
-          width: screenWidth,
+          width: screenwidth,
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
+            color: const Color(0xFFECECEC),
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: Colors.black54,
-            ),
           ),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              text,
-              style: const TextStyle(
-                fontFamily: "Nexa Bold",
-                color: Colors.black54,
-                fontSize: 16,
-              ),
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontFamily: "Nexa Regular",
+              color: Colors.black87,
+              fontSize: 16,
             ),
           ),
         ),
@@ -289,7 +302,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget textFields(String hint, String title, TextEditingController controller) {
+  Widget textFields(String title, String hint, TextEditingController controller) {
     return Column(
       children: [
         Align(
@@ -305,16 +318,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         Container(
           margin: const EdgeInsets.only(bottom: 12),
-          child: TextFormField(
+          height: kToolbarHeight,
+          width: screenwidth,
+          alignment: Alignment.centerLeft,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFECECEC),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: TextField(
             controller: controller,
-            cursorColor: Colors.black54,
-            maxLines: 1,
             decoration: InputDecoration(
               hintText: hint,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(4),
-              ),
-              contentPadding: const EdgeInsets.only(left: 15),
+              border: InputBorder.none,
             ),
           ),
         ),
@@ -326,7 +342,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        duration: const Duration(seconds: 2),
       ),
     );
   }
