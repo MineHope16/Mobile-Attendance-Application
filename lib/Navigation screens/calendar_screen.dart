@@ -123,20 +123,24 @@ class _CalendarScreenState extends State<CalendarScreen> {
             SizedBox(
               height: screenHeight - screenHeight / 3.72,
               child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore
-                    .instance
+                stream: FirebaseFirestore.instance
                     .collection("Employee")
                     .doc(User.id)
                     .collection("Records")
                     .snapshots(),
-                builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot){
-                  if(snapshot.hasData) {
+                builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasData) {
                     final snap = snapshot.data!.docs;
                     return ListView.builder(
-                        itemCount: snap.length,
-                        itemBuilder: (context, index){
-                          return DateFormat("MMMM").format(snap[index]['date'].toDate()) == _month ? Container(
-                            margin: EdgeInsets.only(top: index > 0 ? 12 : 0,left: 4, right: 4),
+                      itemCount: snap.length,
+                      itemBuilder: (context, index) {
+                        if (snap[index]['date'] != null && DateFormat("MMMM").format(snap[index]['date'].toDate()) == _month) {
+                          return Container(
+                            margin: EdgeInsets.only(top: index > 0 ? 12 : 0, left: 4, right: 4),
                             padding: const EdgeInsets.all(5),
                             height: 125,
                             decoration: BoxDecoration(
@@ -150,7 +154,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                   color: Colors.black.withOpacity(0.2),
                                   blurRadius: 15,
                                   offset: const Offset(0, 10),
-                                )
+                                ),
                               ],
                               borderRadius: BorderRadius.circular(25),
                               border: Border.all(
@@ -252,16 +256,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 ),
                               ],
                             ),
-                          ) : const SizedBox();
+                          );
+                        } else {
+                          return const SizedBox();
                         }
+                      },
                     );
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text("Error: ${snapshot.error}"));
                   } else {
-                    return const SizedBox();
+                    return const Center(child: Text("No data found"));
                   }
                 },
               ),
-            )
-
+            ),
           ],
         ),
       ),

@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:zidio_attendance_project/Navigation%20screens/calendar_screen.dart';
 import 'package:zidio_attendance_project/Navigation%20screens/profile_screen.dart';
@@ -27,11 +26,35 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    
-    getId();
+    getId().then((value) {
+      _getCredentials();
+      _getProfilePic();
+    });
+  }
+
+  void _getCredentials() async {
+    try {
+      DocumentSnapshot doc = await FirebaseFirestore.instance.collection("Employee").doc(User.id).get();
+      setState(() {
+        User.canEdit = doc['canEdit'];
+        User.firstName = doc['firstName'];
+        User.lastName = doc['lastName'];
+        User.birthDate = doc['birthDate'];
+        User.address = doc['address'];
+      });
+    } catch (e) {
+      return;
+    }
+  }
+
+  void _getProfilePic() async {
+    DocumentSnapshot doc = await FirebaseFirestore.instance.collection("Employee").doc(User.id).get();
+    setState(() {
+      User.profilePicLink = doc['profilePic'];
+    });
   }
   
-  void getId() async{
+  Future<void> getId() async{
     QuerySnapshot snap = await FirebaseFirestore.instance
         .collection("Employee")
         .where('id',isEqualTo: User.employeeId)
@@ -56,10 +79,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: IndexedStack(
         index: currentIndex,
-        children: [
-          new CalendarScreen(),
-          new TodayScreen(),
-          new ProfileScreen(),
+        children: const [
+          CalendarScreen(),
+          TodayScreen(),
+          ProfileScreen(),
         ],
       ),
       
@@ -83,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
 
         child: ClipRRect(
-          borderRadius: BorderRadius.all(Radius.circular(40)),
+          borderRadius: const BorderRadius.all(Radius.circular(40)),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -112,12 +135,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
 
                             i == currentIndex ? Container(
-                              margin: EdgeInsets.only(top: 6),
+                              margin: const EdgeInsets.only(top: 6),
                               height: 3,
                               width: 24,
                               decoration: BoxDecoration(
                                 color: primary,
-                                borderRadius: BorderRadius.all(Radius.circular(40)),
+                                borderRadius: const BorderRadius.all(Radius.circular(40)),
                               ),
                             ) : const SizedBox(),
 

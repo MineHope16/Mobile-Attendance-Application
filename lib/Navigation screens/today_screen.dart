@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -124,7 +123,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.3),
                     blurRadius: 20,
-                    offset: Offset(0, 10),
+                    offset: const Offset(0, 10),
                   ),
                 ],
                 borderRadius: BorderRadius.circular(20),
@@ -155,7 +154,7 @@ class _TodayScreenState extends State<TodayScreen> {
                               letterSpacing: 1.2,
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             checkIn,
                             style: TextStyle(
@@ -173,7 +172,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     width: 1.5,
                     height: 60,
                     color: Colors.white.withOpacity(0.6),
-                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    margin: const EdgeInsets.symmetric(horizontal: 14),
                   ),
                   Expanded(
                     child: Container(
@@ -184,18 +183,18 @@ class _TodayScreenState extends State<TodayScreen> {
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             "Check Out",
                             style: TextStyle(
                               fontSize: screenWidth / 24,
                               fontFamily: "Cambria",
-                              color: Colors.redAccent,
+                              color: Colors.red,
                               letterSpacing: 1.2,
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             checkOut,
                             style: TextStyle(
